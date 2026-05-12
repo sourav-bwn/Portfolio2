@@ -369,7 +369,10 @@ nav{
   .pill{font-size:0.52rem;padding:0.6rem 1.2rem;}
   #projects{padding:5rem 1.5rem;}
   .cards{grid-template-columns:1fr 1fr;}
-  .tool-grid{grid-template-columns:repeat(3,72px);gap:0.8rem 0.6rem;}
+  .tool-grid{grid-template-columns:repeat(3,54px);gap:0.6rem 0.4rem;}
+  .tool-icon{width:54px;height:54px;border-radius:12px;}
+  .tool-item{gap:0.3rem;}
+  .tool-name{font-size:0.36rem;}
   #contact{padding:6rem 1.5rem;}
 }
 
@@ -431,17 +434,17 @@ nav{
 }
 .tool-grid{
   display:grid;
-  grid-template-columns:repeat(4,76px);
+  grid-template-columns:repeat(4,60px);
   justify-content:center;
-  gap:1rem 0.8rem;
-  max-width:420px;margin:0 auto;
+  gap:0.7rem 0.5rem;
+  max-width:300px;margin:0 auto;
 }
 .tool-item{
-  display:flex;flex-direction:column;align-items:center;gap:0.5rem;
+  display:flex;flex-direction:column;align-items:center;gap:0.35rem;
   cursor:default;
 }
 .tool-icon{
-  width:76px;height:76px;border-radius:18px;
+  width:60px;height:60px;border-radius:14px;
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
   transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease;
@@ -459,7 +462,7 @@ nav{
   border-radius:18px;
 }
 .tool-name{
-  font-family:'Orbitron',sans-serif;font-size:0.44rem;
+  font-family:'Orbitron',sans-serif;font-size:0.4rem;
   letter-spacing:0.15em;color:rgba(224,238,255,0.35);
   text-transform:uppercase;transition:color 0.3s;
 }
