@@ -213,9 +213,10 @@ nav{
 .portrait{
   border:1px solid rgba(0,212,255,0.25);
   background:rgba(5,13,26,0.4);
-  height:520px;
+  height:400px;width:400px;border-radius:50%;
   position:relative;overflow:hidden;
   box-shadow:0 0 40px rgba(0,212,255,0.06);
+  margin:0 auto;
 }
 .portrait-img{
   width:100%;height:100%;
@@ -223,7 +224,8 @@ nav{
   object-fit:cover;object-position:center 30%;
   display:block;
   background:#050D1A;
-  transform:scale(1.2);
+  border-radius:50%;
+  transform:scale(1.3);
 }
 .portrait-inner{display:none;}
 .p-avatar{display:none;}
@@ -427,7 +429,7 @@ nav{
   #about,#skills,#projects,#contact{padding:4rem 1.2rem;}
   .sec-title{font-size:clamp(1.3rem,6vw,2rem);}
   .about-txt{font-size:0.83rem;}
-  .portrait{min-height:250px;}
+  .portrait{width:280px;height:280px;}
 
   .card{padding:1.4rem;}
   .card-title{font-size:0.88rem;}
