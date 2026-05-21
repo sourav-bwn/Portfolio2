@@ -2587,5 +2587,262 @@ if(window.speechSynthesis){
   speechSynthesis.onvoiceschanged = ()=>speechSynthesis.getVoices();
 }
 </script>
+
+<!-- ══════════════════════════════════════════
+     SOURAV PA — Personal Assistant Interface
+═══════════════════════════════════════════ -->
+<style>
+#spa-root *{box-sizing:border-box;margin:0;padding:0}
+
+#spa-btn{
+  position:fixed;bottom:32px;right:32px;z-index:9999;
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,#0d1b2a 0%,#1b2838 100%);
+  border:1.5px solid rgba(0,212,255,0.3);
+  box-shadow:0 0 20px rgba(0,212,255,0.08),0 8px 32px rgba(0,0,0,0.6);
+  cursor:pointer;overflow:hidden;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),border-color .3s,box-shadow .3s;
+  display:flex;align-items:center;justify-content:center;
+}
+#spa-btn:hover{transform:scale(1.1);border-color:rgba(0,212,255,0.6);box-shadow:0 0 30px rgba(0,212,255,0.2),0 8px 40px rgba(0,0,0,0.7)}
+#spa-btn-pulse{
+  position:absolute;inset:0;border-radius:50%;
+  animation:spa-pulse 3s ease-in-out infinite;
+}
+@keyframes spa-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,.25)}
+  50%{box-shadow:0 0 0 10px rgba(0,212,255,0)}
+}
+
+#spa-panel{
+  position:fixed;bottom:110px;right:32px;z-index:9998;
+  width:350px;max-height:540px;
+  background:rgba(6,10,22,0.93);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid rgba(0,212,255,0.12);
+  border-radius:16px;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 0 60px rgba(0,212,255,0.05),0 24px 80px rgba(0,0,0,0.7);
+  transform:scale(.9) translateY(16px);opacity:0;pointer-events:none;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .25s;
+}
+#spa-panel.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all}
+
+#spa-hdr{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;
+  border-bottom:1px solid rgba(0,212,255,0.08);
+  flex-shrink:0;
+}
+#spa-av{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#00D4FF,#7B61FF);
+  display:flex;align-items:center;justify-content:center;
+  font-family:Orbitron,sans-serif;font-weight:900;font-size:.8rem;color:#020408;
+  position:relative;
+}
+#spa-av::after{
+  content:'';position:absolute;inset:-2px;border-radius:50%;
+  border:1.5px solid transparent;
+  background:linear-gradient(135deg,#00D4FF,#7B61FF) border-box;
+  -webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:destination-out;mask-composite:exclude;
+  animation:spa-rot 4s linear infinite;
+}
+@keyframes spa-rot{to{transform:rotate(360deg)}}
+#spa-meta{flex:1}
+#spa-nm{font-family:Orbitron,sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.18em;color:#00D4FF}
+#spa-st{font-family:Syne,sans-serif;font-size:.62rem;color:rgba(224,238,255,.35);display:flex;align-items:center;gap:5px;margin-top:1px}
+#spa-dot{width:5px;height:5px;border-radius:50%;background:#34D399;box-shadow:0 0 6px #34D399}
+#spa-cls{background:none;border:none;cursor:pointer;color:rgba(224,238,255,.3);font-size:1rem;padding:3px;transition:color .2s;line-height:1}
+#spa-cls:hover{color:#00D4FF}
+
+#spa-msgs{
+  flex:1;overflow-y:auto;padding:12px 14px;
+  display:flex;flex-direction:column;gap:8px;
+  scrollbar-width:thin;scrollbar-color:rgba(0,212,255,.15) transparent;
+}
+#spa-msgs::-webkit-scrollbar{width:3px}
+#spa-msgs::-webkit-scrollbar-thumb{background:rgba(0,212,255,.15);border-radius:2px}
+
+.spa-msg{max-width:88%;font-family:Syne,sans-serif;font-size:.78rem;line-height:1.6;letter-spacing:.02em;animation:spa-in .25s ease}
+@keyframes spa-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.spa-msg.pa{align-self:flex-start}
+.spa-msg.u{align-self:flex-end}
+.spa-msg.pa .spa-bub{
+  background:rgba(0,212,255,.06);
+  border:1px solid rgba(0,212,255,.12);
+  border-radius:3px 12px 12px 12px;
+  padding:9px 13px;color:rgba(224,238,255,.82);
+}
+.spa-msg.u .spa-bub{
+  background:rgba(123,97,255,.1);
+  border:1px solid rgba(123,97,255,.18);
+  border-radius:12px 3px 12px 12px;
+  padding:9px 13px;color:rgba(224,238,255,.85);text-align:right;
+}
+
+#spa-ty{display:none;align-self:flex-start}
+#spa-ty .spa-bub{
+  background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.12);
+  border-radius:3px 12px 12px 12px;padding:9px 16px;display:flex;gap:4px;align-items:center;
+}
+.spa-d{width:5px;height:5px;border-radius:50%;background:#00D4FF;animation:spa-b 1.2s ease-in-out infinite}
+.spa-d:nth-child(2){animation-delay:.2s}
+.spa-d:nth-child(3){animation-delay:.4s}
+@keyframes spa-b{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+#spa-inp{
+  display:flex;gap:6px;padding:10px 12px;
+  border-top:1px solid rgba(0,212,255,.08);
+  background:rgba(6,10,22,.5);flex-shrink:0;
+}
+#spa-txt{
+  flex:1;background:rgba(255,255,255,.04);
+  border:1px solid rgba(0,212,255,.12);
+  border-radius:8px;padding:8px 12px;
+  color:rgba(224,238,255,.85);
+  font-family:Syne,sans-serif;font-size:.78rem;letter-spacing:.03em;
+  outline:none;height:38px;line-height:1.4;
+  transition:border-color .2s;
+}
+#spa-txt:focus{border-color:rgba(0,212,255,.35)}
+#spa-txt::placeholder{color:rgba(224,238,255,.18)}
+.spa-bt{
+  width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;flex-shrink:0;
+}
+.spa-bt:hover{transform:scale(1.08)}
+#spa-snd{background:linear-gradient(135deg,#00D4FF,#7B61FF);box-shadow:0 0 12px rgba(0,212,255,.25)}
+#spa-snd:hover{box-shadow:0 0 20px rgba(0,212,255,.45)}
+</style>
+
+<div id="spa-root">
+  <div id="spa-btn" onclick="spaToggle()" title="Talk to Sourav's PA">
+    <div id="spa-btn-pulse"></div>
+    <svg viewBox="0 0 28 28" width="28" height="28">
+      <circle cx="14" cy="14" r="13" fill="none" stroke="#00D4FF" stroke-width=".8" opacity=".3"/>
+      <path d="M14 6a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0v-2a5 5 0 0 0-5-5z" fill="none" stroke="#00D4FF" stroke-width="1.5" opacity=".9"/>
+      <path d="M9 15a5 5 0 0 0 10 0" fill="none" stroke="#7B61FF" stroke-width="1.2" opacity=".7"/>
+      <circle cx="14" cy="10" r="1.5" fill="#00D4FF" opacity=".8"/>
+      <path d="M11 18h6" stroke="#00D4FF" stroke-width="1.2" opacity=".5"/>
+    </svg>
+  </div>
+
+  <div id="spa-panel">
+    <div id="spa-hdr">
+      <div id="spa-av">PA</div>
+      <div id="spa-meta">
+        <div id="spa-nm">SOURAV · PA</div>
+        <div id="spa-st"><span id="spa-dot"></span><span id="spa-st-txt">Ready</span></div>
+      </div>
+      <button id="spa-cls" onclick="spaToggle()">✕</button>
+    </div>
+
+    <div id="spa-msgs">
+      <div class="spa-msg pa">
+        <div class="spa-bub">Hey! I'm Sourav's PA. Ask me anything about his work, skills, or projects.</div>
+      </div>
+      <div id="spa-ty" class="spa-msg pa">
+        <div class="spa-bub"><div class="spa-d"></div><div class="spa-d"></div><div class="spa-d"></div></div>
+      </div>
+    </div>
+
+    <div id="spa-inp">
+      <input id="spa-txt" placeholder="Ask about Sourav…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();spaSend()}">
+      <button class="spa-bt" id="spa-snd" onclick="spaSend()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+          <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SPA_SYS = `You are Sourav's Personal Assistant (PA) — an intelligent, professional, and warm AI assistant embedded in Sourav's portfolio website. You represent Sourav and help visitors understand his work.
+
+ABOUT SOURAV:
+• Sourav is a visionary developer, designer, and builder from India
+• Also known as "Architect of Futures"
+• Started with ethical hacking & cybersecurity in 2022 (his "Shadow Protocol" phase)
+• Evolved into a full-stack creative technologist building AI-powered experiences
+• Skills: Frontend (React, HTML/CSS/JS), AI integration, UI/UX design, creative tech, backend systems, prompt engineering
+• Philosophy: "Great things are built by people who refuse to stay ordinary."
+• Aesthetic: Dark, futuristic, cinematic
+• Projects include: AI chatbots, 3D experiences, trading bots, EdTech platforms, AR/HCI systems
+• Contacts: GitHub (sourav-bwn)
+
+PERSONALITY:
+• Professional, warm, and helpful — like a capable executive assistant
+• Keep answers concise (2-4 sentences)
+• Never break character — you are Sourav's PA
+• Answer in the language the user writes in`;
+
+let spaOpen = false;
+let spaHistory = [];
+
+function spaToggle(){
+  spaOpen = !spaOpen;
+  document.getElementById('spa-panel').classList.toggle('open', spaOpen);
+}
+
+async function spaSend(){
+  const inp = document.getElementById('spa-txt');
+  const txt = inp.value.trim();
+  if(!txt) return;
+  inp.value = '';
+
+  spaAddMsg(txt, 'u');
+  spaHistory.push({role:'user', content:txt});
+
+  const ty = document.getElementById('spa-ty');
+  ty.style.display = 'flex';
+  spaScroll();
+  document.getElementById('spa-st-txt').textContent = 'Thinking…';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        system: SPA_SYS,
+        messages: spaHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.map(b=>b.text||'').join('') || 'Connection glitched. Ask again!';
+
+    ty.style.display = 'none';
+    spaHistory.push({role:'assistant', content:reply});
+    spaAddMsg(reply, 'pa');
+    document.getElementById('spa-st-txt').textContent = 'Ready';
+
+  } catch(e) {
+    ty.style.display = 'none';
+    spaAddMsg('Signal lost. Try again in a moment.', 'pa');
+    document.getElementById('spa-st-txt').textContent = 'Ready';
+  }
+}
+
+function spaAddMsg(txt, who){
+  const msgs = document.getElementById('spa-msgs');
+  const ty = document.getElementById('spa-ty');
+  const d = document.createElement('div');
+  d.className = 'spa-msg ' + who;
+  d.innerHTML = '<div class="spa-bub">' + txt.replace(/\n/g,'<br>') + '</div>';
+  msgs.insertBefore(d, ty);
+  spaScroll();
+}
+
+function spaScroll(){
+  const msgs = document.getElementById('spa-msgs');
+  setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+}
+</script>
+
 </body>
 </html>
