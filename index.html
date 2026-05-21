@@ -2071,23 +2071,22 @@ rvEls.forEach(el=>rvObs.observe(el));
 #spa-root *{box-sizing:border-box;margin:0;padding:0}
 
 #spa-btn{
-  position:fixed;bottom:32px;right:32px;z-index:9999;
-  width:64px;height:64px;border-radius:50%;
-  background:linear-gradient(135deg,#0d1b2a 0%,#1b2838 100%);
-  border:1.5px solid rgba(0,212,255,0.3);
-  box-shadow:0 0 20px rgba(0,212,255,0.08),0 8px 32px rgba(0,0,0,0.6);
+  position:fixed;bottom:28px;right:28px;z-index:9999;
+  width:120px;height:120px;
   cursor:pointer;overflow:hidden;
-  transition:transform .25s cubic-bezier(.34,1.56,.64,1),border-color .3s,box-shadow .3s;
-  display:flex;align-items:center;justify-content:center;
+  border:none;background:transparent;
+  transition:transform .3s ease;
+  border-radius:12px;
 }
-#spa-btn:hover{transform:scale(1.1);border-color:rgba(0,212,255,0.6);box-shadow:0 0 30px rgba(0,212,255,0.2),0 8px 40px rgba(0,0,0,0.7)}
+#spa-btn:hover{transform:scale(1.08)}
+#spa-btn img{width:100%;height:100%;object-fit:contain;display:block}
 #spa-btn-pulse{
-  position:absolute;inset:0;border-radius:50%;
+  position:absolute;inset:-4px;border-radius:14px;
   animation:spa-pulse 3s ease-in-out infinite;
 }
 @keyframes spa-pulse{
   0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,.25)}
-  50%{box-shadow:0 0 0 10px rgba(0,212,255,0)}
+  50%{box-shadow:0 0 0 8px rgba(0,212,255,0)}
 }
 
 #spa-panel{
@@ -2197,13 +2196,7 @@ rvEls.forEach(el=>rvObs.observe(el));
 <div id="spa-root">
   <div id="spa-btn" onclick="spaToggle()" title="Talk to Sourav's PA">
     <div id="spa-btn-pulse"></div>
-    <svg viewBox="0 0 28 28" width="28" height="28">
-      <circle cx="14" cy="14" r="13" fill="none" stroke="#00D4FF" stroke-width=".8" opacity=".3"/>
-      <path d="M14 6a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0v-2a5 5 0 0 0-5-5z" fill="none" stroke="#00D4FF" stroke-width="1.5" opacity=".9"/>
-      <path d="M9 15a5 5 0 0 0 10 0" fill="none" stroke="#7B61FF" stroke-width="1.2" opacity=".7"/>
-      <circle cx="14" cy="10" r="1.5" fill="#00D4FF" opacity=".8"/>
-      <path d="M11 18h6" stroke="#00D4FF" stroke-width="1.2" opacity=".5"/>
-    </svg>
+    <img src="superman-btn.png" alt="Sourav's PA">
   </div>
 
   <div id="spa-panel">
