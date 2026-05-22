@@ -879,6 +879,7 @@ nav{
     <li><a href="#skills">Build</a></li>
     <li><a href="#projects">Create</a></li>
     <li><a href="#contact">Contact</a></li>
+    <li><a href="/admin" style="color:rgba(224,238,255,0.2);font-size:0.5rem">[Admin]</a></li>
   </ul>
   <button class="hamburger" id="ham" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -2588,6 +2589,129 @@ if(window.speechSynthesis){
   speechSynthesis.getVoices();
   speechSynthesis.onvoiceschanged = ()=>speechSynthesis.getVoices();
 }
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    const res = await fetch('/api/portfolio');
+    const data = await res.json();
+
+    // ── Update Stats ──
+    if (data.stats && data.stats.length) {
+      const statBoxes = document.querySelectorAll('.stat-box');
+      data.stats.forEach((stat, i) => {
+        if (statBoxes[i]) {
+          const numEl = statBoxes[i].querySelector('.stat-num');
+          const lblEl = statBoxes[i].querySelector('.stat-lbl');
+          if (numEl) { numEl.dataset.target = stat.value; numEl.textContent = '0'; }
+          if (lblEl) lblEl.textContent = stat.label;
+        }
+      });
+      // re-trigger counters
+      document.querySelectorAll('.stat-num').forEach(n => {
+        const obs = new IntersectionObserver(entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              const target = parseInt(e.target.dataset.target);
+              const suffix = e.target.dataset.suffix || '';
+              const duration = 1800;
+              const start = performance.now();
+              function tick(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                e.target.textContent = Math.floor(eased * target) + suffix;
+                if (progress < 1) requestAnimationFrame(tick);
+                else e.target.textContent = target + suffix;
+              }
+              requestAnimationFrame(tick);
+              obs.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.5 });
+        obs.observe(n);
+      });
+    }
+
+    // ── Update Skills Pills ──
+    if (data.thoughts && data.thoughts.length) {
+      const pillGrid = document.querySelector('.pill-grid');
+      if (pillGrid) {
+        const colors = ['#00D4FF','#FF61D8','#FFB347','#7B61FF','#FCD34D','#00FFB2','#61DDFF','#F87171','#A78BFA','#34D399','#FB923C','#818CF8','#2DD4BF','#F472B6'];
+        pillGrid.innerHTML = data.thoughts.map((t, i) => {
+          const c = colors[i % colors.length];
+          return `<div class="pill rv" style="--pill-color:${c};--pill-rgb:${hexToRgb(c)}">${esc(t.name)}</div>`;
+        }).join('');
+      }
+    }
+
+    // ── Update Globe SK data ──
+    if (data.skills && data.skills.length) {
+      window.SK = data.skills.map(s => ({
+        l: s.name,
+        tag: 'SKILL',
+        c: '#00D4FF',
+        lat: 45 + Math.random() * 30 - 15,
+        lon: Math.random() * 360 - 180,
+        d: s.name
+      }));
+    }
+
+    // ── Update Mastered Apps ──
+    if (data.apps && data.apps.length) {
+      const toolGrid = document.querySelector('.tool-grid');
+      if (toolGrid) {
+        toolGrid.innerHTML = data.apps.map(a => {
+          const imgSrc = a.image_path || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="#0a0a1a"/><text x="24" y="30" text-anchor="middle" fill="#00D4FF" font-size="10" font-family="Orbitron">' + esc(a.name[0]) + '</text></svg>');
+          return `<div class="tool-item rv"><div class="tool-icon"><img src="${esc(imgSrc)}" alt="${esc(a.name)}"></div><span class="tool-name">${esc(a.name)}</span></div>`;
+        }).join('');
+      }
+    }
+
+    // ── Update Constructs ──
+    if (data.constructs && data.constructs.length) {
+      const cardsContainer = document.querySelector('.cards');
+      if (cardsContainer) {
+        cardsContainer.innerHTML = data.constructs.map((c, i) => {
+          const delay = (i * 0.05).toFixed(2) + 's';
+          const rgb = hexToRgb(c.accent_color || '#6366f1');
+          return `<div class="card rv" style="transition-delay:${delay};--card-accent:${c.accent_color || '#6366f1'};--card-accent-rgb:${rgb}">
+            <div class="card-num">${esc(c.card_num)}</div>
+            <span class="card-tag">${esc(c.tag)}</span>
+            <h3 class="card-title">${esc(c.title)}</h3>
+            <p class="card-desc">${esc(c.description)}</p>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // ── Update Roadmap ──
+    if (data.roadmap && data.roadmap.length) {
+      const roadmapLine = document.querySelector('.roadmap-line');
+      if (roadmapLine) {
+        roadmapLine.innerHTML = data.roadmap.map((r, i) => {
+          const delay = (i * 0.08).toFixed(2) + 's';
+          const isEven = i % 2 === 0;
+          return `<div class="rm-item rv" style="transition-delay:${delay}">
+            ${isEven ? `<div class="rm-content"><span class="rm-year">${r.year}</span><span class="rm-phase">${esc(r.phase)}</span><p class="rm-desc">${esc(r.description)}</p></div><div class="rm-spacer"></div>`
+            : `<div class="rm-spacer"></div><div class="rm-content"><span class="rm-year">${r.year}</span><span class="rm-phase">${esc(r.phase)}</span><p class="rm-desc">${esc(r.description)}</p></div>`}
+          </div>`;
+        }).join('');
+      }
+    }
+
+  } catch (e) {
+    console.log('Using hardcoded data (API not available)');
+  }
+});
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return r + ',' + g + ',' + b;
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>
