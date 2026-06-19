@@ -62,6 +62,12 @@ async function uploadToSupabase(file, folder = '') {
   return publicUrl;
 }
 
+// ── Supabase check ──
+app.use('/api', (req, res, next) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not connected. Check SUPABASE_URL and SUPABASE_SERVICE_KEY.' });
+  next();
+});
+
 // ══════════════════════════════════════════
 //  PUBLIC ENDPOINTS (no auth required)
 // ══════════════════════════════════════════
@@ -376,6 +382,12 @@ app.get('/admin/roadmap', (req, res) => {
 // ── Serve frontend ──
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ── Global error handler ──
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
 // ── Export for Vercel serverless ──
