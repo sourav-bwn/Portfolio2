@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOURAV — Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Syne', sans-serif; background: #020408; color: #e0eeff; }
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+    input, textarea, select {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(0,212,255,0.12);
+      padding: 0.6rem 0.9rem;
+      color: #e0eeff;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.8rem;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #00D4FF;
+      box-shadow: 0 0 12px rgba(0,212,255,0.15);
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    .btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.55rem 1.2rem;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .btn-cyan { border-color: #00D4FF; color: #00D4FF; background: transparent; }
+    .btn-cyan:hover { background: #00D4FF; color: #020408; }
+    .btn-primary { background: linear-gradient(135deg, #00D4FF, #7B61FF); border: none; color: #fff; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-danger { border-color: #ef4444; color: #ef4444; background: transparent; }
+    .btn-danger:hover { background: #ef4444; color: #fff; }
+    .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.45rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th { font-family: 'Orbitron', sans-serif; font-size: 0.55rem; letter-spacing: 0.15em; color: rgba(0,212,255,0.6); text-align: left; padding: 0.7rem 0.8rem; border-bottom: 1px solid rgba(0,212,255,0.08); text-transform: uppercase; }
+    td { padding: 0.7rem 0.8rem; border-bottom: 1px solid rgba(0,212,255,0.05); font-size: 0.78rem; color: rgba(224,238,255,0.7); }
+    tr:hover td { background: rgba(0,212,255,0.03); }
+    .toast {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      padding: 0.8rem 1.3rem; background: rgba(5,13,26,0.95);
+      border: 1px solid #00D4FF; font-size: 0.75rem;
+      transform: translateX(120%); transition: transform 0.3s;
+      max-width: 320px;
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-color: #34D399; }
+    .toast.error { border-color: #ef4444; }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(2,4,8,0.88); z-index: 1000;
+      justify-content: center; align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: rgba(5,13,26,0.98); border: 1px solid rgba(0,212,255,0.15);
+      padding: 1.8rem; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto;
+      position: relative;
+    }
+    .modal::before {
+      content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 2px;
+      background: linear-gradient(90deg, #00D4FF, #7B61FF);
+    }
+    .color-swatch {
+      width: 26px; height: 26px; border-radius: 4px; cursor: pointer;
+      border: 2px solid transparent; transition: border-color 0.2s;
+    }
+    .color-swatch:hover, .color-swatch.active { border-color: #fff; }
+    .sidebar-item {
+      padding: 0.65rem 1.2rem; font-size: 0.55rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(224,238,255,0.35);
+      cursor: pointer; transition: all 0.2s;
+      border-left: 2px solid transparent;
+    }
+    .sidebar-item:hover, .sidebar-item.active { color: #00D4FF; background: rgba(0,212,255,0.04); }
+    .sidebar-item.active { border-left-color: #00D4FF; }
+    .stat-card {
+      background: rgba(5,13,26,0.6); border: 1px solid rgba(0,212,255,0.08);
+      padding: 1.2rem; text-align: center; transition: border-color 0.3s;
+    }
+    .stat-card:hover { border-color: rgba(0,212,255,0.3); }
+    .stat-number { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; font-weight: 900; color: #00D4FF; text-shadow: 0 0 20px rgba(0,212,255,0.5); }
+    .stat-label { font-size: 0.6rem; letter-spacing: 0.2em; color: rgba(224,238,255,0.35); text-transform: uppercase; margin-top: 0.3rem; }
+    @media(max-width: 768px) {
+      .sidebar { width: 50px !important; }
+      .sidebar-item span.txt { display: none; }
+      .sidebar-item { padding: 0.65rem 0; text-align: center; font-size: 0.7rem; }
+      .main-content { margin-left: 50px !important; padding: 1rem !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle" class="orbitron text-[0.75rem] tracking-[0.25em] text-cyan-400 mb-4"></h3>
+    <div id="modalBody"></div>
+    <div class="flex gap-3 mt-5">
+      <button class="btn btn-sm btn-cyan" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" id="modalSave" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <div class="sidebar fixed top-0 left-0 bottom-0 w-[200px] bg-[rgba(5,13,26,0.95)] border-r border-[rgba(0,212,255,0.06)] z-50 overflow-y-auto scrollbar-thin" style="flex-shrink:0">
+    <div class="orbitron text-[0.7rem] tracking-[0.3em] text-cyan-400 p-4 pb-3 border-b border-[rgba(0,212,255,0.08)]">◈ S · ADMIN</div>
+    <div class="py-2">
+      <div class="sidebar-item active" onclick="switchSection('dashboard')" data-section="dashboard">◈ Dashboard</div>
+      <div class="sidebar-item" onclick="switchSection('skills')" data-section="skills">⚡ Skills</div>
+      <div class="sidebar-item" onclick="switchSection('projects')" data-section="projects">🏗️ <span class="txt">Projects</span></div>
+      <div class="sidebar-item" onclick="switchSection('certificates')" data-section="certificates">📜 <span class="txt">Certificates</span></div>
+      <div class="sidebar-item" onclick="switchSection('stats')" data-section="stats">📊 <span class="txt">Stats</span></div>
+      <div class="sidebar-item" onclick="switchSection('thoughts')" data-section="thoughts">🧠 <span class="txt">Thoughts</span></div>
+      <div class="sidebar-item" onclick="switchSection('apps')" data-section="apps">📱 <span class="txt">Apps</span></div>
+      <div class="sidebar-item" onclick="switchSection('roadmap')" data-section="roadmap">🗺️ <span class="txt">Roadmap</span></div>
+    </div>
+    <div class="absolute bottom-0 left-0 right-0 border-t border-[rgba(0,212,255,0.08)]">
+      <div class="sidebar-item text-[rgba(224,238,255,0.2)] hover:text-red-400 cursor-pointer" onclick="doLogout()">⟳ Logout</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content ml-[200px] flex-1 p-5 md:p-6 min-h-screen">
+    <div class="flex justify-between items-center mb-5 pb-3 border-b border-[rgba(0,212,255,0.08)]">
+      <h2 id="sectionTitle" class="orbitron text-[0.9rem] tracking-[0.25em] text-cyan-400" style="text-shadow: 0 0 15px rgba(0,212,255,0.3);">◈ DASHBOARD</h2>
+      <span id="userDisplay" class="text-[0.55rem] tracking-[0.15em] text-[rgba(224,238,255,0.3)]"></span>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="section-dashboard" class="section-content">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" id="dashboardStats"></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dashboardRecent"></div>
+    </div>
+
+    <!-- Skills Section -->
+    <div id="section-skills" class="section-content hidden">
+      <button class="btn btn-cyan w-full mb-4 py-2" onclick="openAddModal('skills')">+ Add Skill</button>
+      <div id="skillsTableContainer"><div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div></div>
+    </div>
+
+    <!-- Projects Section -->
+    <div id="section-projects" class="section-content hidden">
+      <button class="btn btn-cyan w-full mb-4 py-2" onclick="openAddModal('projects')">+ Add Project</button>
+      <div id="projectsTableContainer"><div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div></div>
+    </div>
+
+    <!-- Certificates Section -->
+    <div id="section-certificates" class="section-content hidden">
+      <button class="btn btn-cyan w-full mb-4 py-2" onclick="openAddModal('certificates')">+ Add Certificate</button>
+      <div id="certificatesTableContainer"><div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div></div>
+    </div>
+
+    <!-- Stats Section -->
+    <div id="section-stats" class="section-content hidden">
+      <button class="btn btn-cyan w-full mb-4 py-2" onclick="openAddModal('stats')">+ Add Stat</button>
+      <div id="statsTableContainer"><div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div></div>
+    </div>
+
+    <!-- Thoughts Section -->
+    <div id="section-thoughts" class="section-content hidden">
+      <button class="btn btn-cyan w-full mb-4 py-2" onclick="openAddModal('thoughts')">+ Add Thought System</button>
+      <div id="thoughtsTableContainer"><div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div></div>
+    </div>
+
+    <!-- Apps Section -->
+    <div id="section-apps" class="section-content hidden">
+      <button class="btn btn-cyan w-full mb-4 py-2" onclick="openAddModal('apps')">+ Add App</button>
+      <div id="appsTableContainer"><div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div></div>
+    </div>
+
+    <!-- Roadmap Section -->
+    <div id="section-roadmap" class="section-content hidden">
+      <button class="btn btn-cyan w-full mb-4 py-2" onclick="openAddModal('roadmap')">+ Add Roadmap Item</button>
+      <div id="roadmapTableContainer"><div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('admin_token');
+let currentEdit = null;
+const COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#06b6d4','#ef4444','#00D4FF','#FF6B9D','#7B61FF','#FFB347','#00FF9F','#FCD34D'];
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type || '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function apiFetch(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Auth check ──
+(async () => {
+  if (!TOKEN) { window.location.href = '/admin'; return; }
+  try {
+    const data = await apiFetch('/api/auth/verify');
+    document.getElementById('userDisplay').textContent = data.user.username;
+  } catch {
+    localStorage.removeItem('admin_token');
+    window.location.href = '/admin';
+  }
+})();
+
+// ── Section switching ──
+function switchSection(name) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  document.querySelector(`.sidebar-item[data-section="${name}"]`).classList.add('active');
+  document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+  document.getElementById('section-' + name).classList.remove('hidden');
+  const titles = {
+    dashboard: '◈ DASHBOARD', skills: '◈ SKILLS', projects: '◈ PROJECTS',
+    certificates: '◈ CERTIFICATES', stats: '◈ STATS', thoughts: '◈ THOUGHT SYSTEMS',
+    apps: '◈ MASTERED APPS', roadmap: '◈ ROADMAP'
+  };
+  document.getElementById('sectionTitle').textContent = titles[name] || '◈ SECTION';
+  loadSection(name);
+}
+
+function doLogout() {
+  localStorage.removeItem('admin_token');
+  window.location.href = '/admin';
+}
+
+// ── Load section data ──
+async function loadSection(name) {
+  const container = document.getElementById(name + 'TableContainer');
+  if (!container) return;
+  if (name === 'dashboard') { loadDashboard(); return; }
+  container.innerHTML = '<div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">Loading...</div>';
+  try {
+    let data;
+    if (['skills', 'stats', 'apps'].includes(name)) {
+      data = await apiFetch('/api/' + (name === 'apps' ? 'apps' : name));
+    } else if (name === 'thoughts') {
+      data = await apiFetch('/api/thought-systems');
+    } else if (name === 'roadmap') {
+      data = await apiFetch('/api/roadmap');
+    } else {
+      data = await apiFetch('/api/' + name);
+    }
+    if (!data || !data.length) {
+      container.innerHTML = '<div class="text-center py-8 text-[rgba(224,238,255,0.2)] text-sm">No items yet.</div>';
+      return;
+    }
+    container.innerHTML = buildTable(name, data);
+  } catch (e) {
+    container.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
+function buildTable(section, data) {
+  let headers, rows;
+  switch(section) {
+    case 'skills':
+      headers = ['Name', 'Category', 'Order', 'Actions'];
+      rows = data.map(i => `<tr>
+        <td class="font-medium text-[rgba(224,238,255,0.85)]">${esc(i.name)}</td>
+        <td>${esc(i.category)}</td>
+        <td>${i.order_index}</td>
+        <td class="flex gap-1.5"><button class="btn btn-sm btn-cyan" onclick="openEditModal('skills',${i.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteItem('skills',${i.id})">Del</button></td>
+      </tr>`).join('');
+      break;
+    case 'projects':
+      headers = ['Title', 'Tag', 'Card #', 'Actions'];
+      rows = data.map(i => `<tr>
+        <td class="font-medium text-[rgba(224,238,255,0.85)]">${esc(i.title)}</td>
+        <td><span class="text-[0.55rem] tracking-wider" style="color:${i.accent_color}">${esc(i.tag)}</span></td>
+        <td>${esc(i.card_num)}</td>
+        <td class="flex gap-1.5"><button class="btn btn-sm btn-cyan" onclick="openEditModal('projects',${i.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteItem('projects',${i.id})">Del</button></td>
+      </tr>`).join('');
+      break;
+    case 'certificates':
+      headers = ['Title', 'Issuer', 'Date', 'Image', 'Actions'];
+      rows = data.map(i => `<tr>
+        <td class="font-medium text-[rgba(224,238,255,0.85)]">${esc(i.title)}</td>
+        <td>${esc(i.issuer)}</td>
+        <td>${esc(i.date_earned)}</td>
+        <td>${i.image_url ? '<span class="text-cyan-400 text-[0.5rem]">● Uploaded</span>' : '<span class="text-[rgba(224,238,255,0.2)] text-[0.5rem]">—</span>'}</td>
+        <td class="flex gap-1.5"><button class="btn btn-sm btn-cyan" onclick="openEditModal('certificates',${i.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteItem('certificates',${i.id})">Del</button></td>
+      </tr>`).join('');
+      break;
+    case 'stats':
+      headers = ['Key', 'Value', 'Label', 'Actions'];
+      rows = data.map(i => `<tr>
+        <td class="font-medium text-[rgba(224,238,255,0.85)]">${esc(i.key)}</td>
+        <td>${i.value}</td>
+        <td>${esc(i.label)}</td>
+        <td class="flex gap-1.5"><button class="btn btn-sm btn-cyan" onclick="openEditModal('stats',${i.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteItem('stats',${i.id})">Del</button></td>
+      </tr>`).join('');
+      break;
+    case 'thoughts':
+      headers = ['Name', 'Order', 'Actions'];
+      rows = data.map(i => `<tr>
+        <td class="font-medium text-[rgba(224,238,255,0.85)]">${esc(i.name)}</td>
+        <td>${i.order_index}</td>
+        <td class="flex gap-1.5"><button class="btn btn-sm btn-cyan" onclick="openEditModal('thoughts',${i.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteItem('thoughts',${i.id})">Del</button></td>
+      </tr>`).join('');
+      break;
+    case 'apps':
+      headers = ['Name', 'Image', 'Order', 'Actions'];
+      rows = data.map(i => `<tr>
+        <td class="font-medium text-[rgba(224,238,255,0.85)]">${esc(i.name)}</td>
+        <td>${i.image_path ? '<span class="text-cyan-400 text-[0.5rem]">●</span>' : '<span class="text-[rgba(224,238,255,0.2)] text-[0.5rem]">—</span>'}</td>
+        <td>${i.order_index}</td>
+        <td class="flex gap-1.5"><button class="btn btn-sm btn-cyan" onclick="openEditModal('apps',${i.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteItem('apps',${i.id})">Del</button></td>
+      </tr>`).join('');
+      break;
+    case 'roadmap':
+      headers = ['Year', 'Phase', 'Description', 'Actions'];
+      rows = data.map(i => `<tr>
+        <td class="font-medium text-[rgba(224,238,255,0.85)]">${i.year}</td>
+        <td>${esc(i.phase)}</td>
+        <td class="max-w-[200px] truncate">${esc(i.description)}</td>
+        <td class="flex gap-1.5"><button class="btn btn-sm btn-cyan" onclick="openEditModal('roadmap',${i.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteItem('roadmap',${i.id})">Del</button></td>
+      </tr>`).join('');
+      break;
+    default: return '<div class="text-center py-8 text-red-400">Unknown section</div>';
+  }
+  return `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── Dashboard ──
+async function loadDashboard() {
+  try {
+    const data = await apiFetch('/api/portfolio');
+    document.getElementById('dashboardStats').innerHTML = `
+      <div class="stat-card"><div class="stat-number">${data.skills?.length || 0}</div><div class="stat-label">Skills</div></div>
+      <div class="stat-card"><div class="stat-number">${data.projects?.length || 0}</div><div class="stat-label">Projects</div></div>
+      <div class="stat-card"><div class="stat-number">${data.certificates?.length || 0}</div><div class="stat-label">Certificates</div></div>`;
+    document.getElementById('dashboardRecent').innerHTML = `
+      <div class="stat-card"><div class="stat-number">${data.stats?.length || 0}</div><div class="stat-label">Stats</div></div>
+      <div class="stat-card"><div class="stat-number">${data.thoughts?.length || 0}</div><div class="stat-label">Thought Systems</div></div>`;
+  } catch {
+    document.getElementById('dashboardStats').innerHTML = '<div class="text-center py-8 text-red-400 text-sm col-span-3">Failed to load dashboard</div>';
+  }
+}
+
+// ── Modal ──
+const MODAL_CONFIGS = {
+  skills: { title: 'Skill', fields: [
+    { id: 'f_name', label: 'Name', type: 'text' },
+    { id: 'f_category', label: 'Category', type: 'text' },
+    { id: 'f_icon', label: 'Icon', type: 'text' },
+    { id: 'f_order', label: 'Order Index', type: 'number' }
+  ]},
+  projects: { title: 'Project', fields: [
+    { id: 'f_tag', label: 'Tag (e.g. SYSTEMS, API)', type: 'text' },
+    { id: 'f_title', label: 'Title', type: 'text' },
+    { id: 'f_desc', label: 'Description', type: 'textarea' },
+    { id: 'f_card', label: 'Card Number', type: 'text' },
+    { id: 'f_link', label: 'Link (optional)', type: 'text' },
+    { id: 'f_order', label: 'Order Index', type: 'number' }
+  ]},
+  certificates: { title: 'Certificate', fields: [
+    { id: 'f_title', label: 'Title', type: 'text' },
+    { id: 'f_issuer', label: 'Issuer', type: 'text' },
+    { id: 'f_date', label: 'Date Earned', type: 'text' },
+    { id: 'f_order', label: 'Order Index', type: 'number' },
+    { id: 'f_image', label: 'Upload Image', type: 'file' }
+  ]},
+  stats: { title: 'Stat', fields: [
+    { id: 'f_key', label: 'Key (unique)', type: 'text' },
+    { id: 'f_value', label: 'Value', type: 'number' },
+    { id: 'f_label', label: 'Label', type: 'text' }
+  ]},
+  thoughts: { title: 'Thought System', fields: [
+    { id: 'f_name', label: 'Name', type: 'text' },
+    { id: 'f_order', label: 'Order Index', type: 'number' }
+  ]},
+  apps: { title: 'App', fields: [
+    { id: 'f_name', label: 'App Name', type: 'text' },
+    { id: 'f_order', label: 'Order Index', type: 'number' }
+  ]},
+  roadmap: { title: 'Roadmap Item', fields: [
+    { id: 'f_year', label: 'Year', type: 'number' },
+    { id: 'f_phase', label: 'Phase Name', type: 'text' },
+    { id: 'f_desc', label: 'Description', type: 'textarea' },
+    { id: 'f_order', label: 'Order Index', type: 'number' }
+  ]}
+};
+
+let currentSection = '';
+let modalMode = 'add';
+
+async function openAddModal(section) {
+  currentSection = section;
+  modalMode = 'add';
+  currentEdit = null;
+  const config = MODAL_CONFIGS[section];
+  if (!config) return;
+  document.getElementById('modalTitle').textContent = 'Add ' + config.title;
+  document.getElementById('modalBody').innerHTML = config.fields.map(f => {
+    let html = `<div class="mb-3"><label class="orbitron text-[0.5rem] tracking-[0.2em] text-[rgba(224,238,255,0.4)] block mb-1">${f.label}</label>`;
+    if (f.type === 'textarea') {
+      html += `<textarea id="${f.id}"></textarea>`;
+    } else if (f.type === 'file') {
+      html += `<input type="file" id="${f.id}" accept="image/*" class="file:text-cyan-400 file:bg-transparent file:border file:border-cyan-400/30 file:rounded file:px-3 file:py-1 file:mr-2 file:cursor-pointer">`;
+    } else if (f.type === 'number') {
+      html += `<input type="number" id="${f.id}" value="0">`;
+    } else {
+      html += `<input type="text" id="${f.id}">`;
+    }
+    html += '</div>';
+    return html;
+  }).join('') + `<div class="flex gap-2 flex-wrap" id="colorPicker"></div>`;
+  // Add color picker for projects
+  if (section === 'projects') {
+    document.getElementById('modalBody').innerHTML += `
+      <div class="mb-3">
+        <label class="orbitron text-[0.5rem] tracking-[0.2em] text-[rgba(224,238,255,0.4)] block mb-1">Accent Color</label>
+        <div class="flex gap-1.5 flex-wrap">${COLORS.map(c => `<div class="color-swatch" style="background:${c}" onclick="pickColor(this,'${c}')"></div>`).join('')}</div>
+        <input type="hidden" id="f_color" value="#6366f1">
+      </div>`;
+  }
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+let selectedColor = '#6366f1';
+function pickColor(el, color) {
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  selectedColor = color;
+}
+
+async function openEditModal(section, id) {
+  currentSection = section;
+  modalMode = 'edit';
+  currentEdit = id;
+  const config = MODAL_CONFIGS[section];
+  if (!config) return;
+  // Fetch current data
+  const list = await apiFetch('/api/' + (section === 'apps' ? 'apps' : section === 'thoughts' ? 'thought-systems' : section));
+  const item = list.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('modalTitle').textContent = 'Edit ' + config.title;
+  document.getElementById('modalBody').innerHTML = config.fields.map(f => {
+    let val = '';
+    if (f.id === 'f_name') val = item.name || '';
+    else if (f.id === 'f_category') val = item.category || '';
+    else if (f.id === 'f_icon') val = item.icon || '';
+    else if (f.id === 'f_order') val = item.order_index ?? 0;
+    else if (f.id === 'f_tag') val = item.tag || '';
+    else if (f.id === 'f_title') val = item.title || '';
+    else if (f.id === 'f_desc') val = item.description || '';
+    else if (f.id === 'f_card') val = item.card_num || '';
+    else if (f.id === 'f_link') val = item.link || '';
+    else if (f.id === 'f_issuer') val = item.issuer || '';
+    else if (f.id === 'f_date') val = item.date_earned || '';
+    else if (f.id === 'f_key') val = item.key || '';
+    else if (f.id === 'f_value') val = item.value ?? 0;
+    else if (f.id === 'f_label') val = item.label || '';
+    else if (f.id === 'f_year') val = item.year || 2026;
+    else if (f.id === 'f_phase') val = item.phase || '';
+    else if (f.id === 'f_image') val = '';
+
+    let html = `<div class="mb-3"><label class="orbitron text-[0.5rem] tracking-[0.2em] text-[rgba(224,238,255,0.4)] block mb-1">${f.label}</label>`;
+    if (f.type === 'textarea') {
+      html += `<textarea id="${f.id}">${esc(String(val))}</textarea>`;
+    } else if (f.type === 'file') {
+      html += `<input type="file" id="${f.id}" accept="image/*" class="file:text-cyan-400 file:bg-transparent file:border file:border-cyan-400/30 file:rounded file:px-3 file:py-1 file:mr-2 file:cursor-pointer">`;
+      if (item.image_url) html += `<p class="text-[0.5rem] text-cyan-400 mt-1">Current: ${item.image_url.substring(0, 40)}...</p>`;
+    } else if (f.type === 'number') {
+      html += `<input type="number" id="${f.id}" value="${val}">`;
+    } else {
+      html += `<input type="text" id="${f.id}" value="${esc(String(val))}">`;
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+
+  if (section === 'projects') {
+    selectedColor = item.accent_color || '#6366f1';
+    document.getElementById('modalBody').innerHTML += `
+      <div class="mb-3">
+        <label class="orbitron text-[0.5rem] tracking-[0.2em] text-[rgba(224,238,255,0.4)] block mb-1">Accent Color</label>
+        <div class="flex gap-1.5 flex-wrap">${COLORS.map(c => `<div class="color-swatch ${c === selectedColor ? 'active' : ''}" style="background:${c}" onclick="pickColor(this,'${c}')"></div>`).join('')}</div>
+        <input type="hidden" id="f_color" value="${selectedColor}">
+      </div>`;
+  }
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+async function saveModal() {
+  const s = currentSection;
+  let body = {};
+  let isCert = s === 'certificates';
+  let hasFile = false;
+  const getVal = (id) => document.getElementById(id)?.value || '';
+  const getNum = (id) => parseInt(document.getElementById(id)?.value) || 0;
+
+  switch(s) {
+    case 'skills':
+      body = { name: getVal('f_name'), category: getVal('f_category'), icon: getVal('f_icon'), order_index: getNum('f_order') };
+      break;
+    case 'projects':
+      body = { tag: getVal('f_tag'), title: getVal('f_title'), description: getVal('f_desc'), card_num: getVal('f_card'), link: getVal('f_link'), accent_color: selectedColor, order_index: getNum('f_order') };
+      break;
+    case 'certificates':
+      body = { title: getVal('f_title'), issuer: getVal('f_issuer'), date_earned: getVal('f_date'), order_index: getNum('f_order') };
+      hasFile = document.getElementById('f_image')?.files?.length > 0;
+      break;
+    case 'stats':
+      body = { key: getVal('f_key'), value: getNum('f_value'), label: getVal('f_label') };
+      break;
+    case 'thoughts':
+      body = { name: getVal('f_name'), order_index: getNum('f_order') };
+      break;
+    case 'apps':
+      body = { name: getVal('f_name'), order_index: getNum('f_order') };
+      break;
+    case 'roadmap':
+      body = { year: getNum('f_year'), phase: getVal('f_phase'), description: getVal('f_desc'), order_index: getNum('f_order') };
+      break;
+  }
+
+  try {
+    let endpoint, method;
+    if (modalMode === 'edit') {
+      method = 'PUT';
+      endpoint = `/api/admin/${s}/${currentEdit}`;
+    } else {
+      method = 'POST';
+      endpoint = `/api/admin/${s}`;
+    }
+
+    if (isCert && hasFile) {
+      const fd = new FormData();
+      Object.entries(body).forEach(([k,v]) => fd.append(k, v));
+      fd.append('image', document.getElementById('f_image').files[0]);
+      const res = await fetch(API + endpoint, {
+        method,
+        headers: TOKEN ? { 'Authorization': 'Bearer ' + TOKEN } : {},
+        body: fd
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+    } else {
+      // Remove image_path for certificates if no file
+      if (isCert && !hasFile && modalMode === 'edit') {
+        // don't send image field
+      }
+      await apiFetch(endpoint, { method, body: JSON.stringify(body) });
+    }
+    showToast(modalMode === 'edit' ? 'Updated successfully' : 'Added successfully', 'success');
+    closeModal();
+    loadSection(s);
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function deleteItem(section, id) {
+  if (!confirm('Delete this item?')) return;
+  try {
+    await apiFetch(`/api/admin/${section}/${id}`, { method: 'DELETE' });
+    showToast('Deleted', 'success');
+    loadSection(section);
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// Initial load
+document.addEventListener('DOMContentLoaded', () => loadSection('dashboard'));
+</script>
+</body>
+</html>
