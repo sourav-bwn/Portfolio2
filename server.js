@@ -11,7 +11,13 @@ const { supabase, BUCKET_NAME } = require('./supabase');
 
 const app = express();
 const PORT = process.env.PORT || 8743;
-const JWT_SECRET = process.env.JWT_SECRET || 'portfolio2-jwt-secret-change-me';
+// Never sign tokens with a publicly known fallback in production: anyone who
+// read this repo could forge an admin token. Fall back only for local dev.
+const IS_PROD = !!(process.env.VERCEL || process.env.NODE_ENV === 'production');
+const JWT_SECRET = process.env.JWT_SECRET || (IS_PROD ? null : 'portfolio2-jwt-secret-change-me');
+if (!JWT_SECRET) {
+  console.error('JWT_SECRET is not set; auth endpoints are disabled in production.');
+}
 
 app.use(cors());
 app.use(express.json());
@@ -38,6 +44,7 @@ function authMiddleware(req, res, next) {
   if (!h || !h.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
   }
+  if (!JWT_SECRET) return res.status(500).json({ error: 'Auth not configured' });
   try {
     req.user = jwt.verify(h.split(' ')[1], JWT_SECRET);
     next();
@@ -48,7 +55,10 @@ function authMiddleware(req, res, next) {
 
 // ── Upload helper ──
 async function uploadToSupabase(file, folder = '') {
-  const ext = file.originalname.split('.').pop();
+  // Derive the stored extension from the validated mimetype; the user-supplied
+  // filename is untrusted and could otherwise set an arbitrary extension.
+  const EXT_BY_MIME = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+  const ext = EXT_BY_MIME[file.mimetype] || 'bin';
   const filename = `${folder ? folder + '/' : ''}${Date.now()}-${uuidv4()}.${ext}`;
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
@@ -174,6 +184,7 @@ app.post('/api/auth/login', async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
+  if (!JWT_SECRET) return res.status(500).json({ error: 'Auth not configured' });
   const token = jwt.sign(
     { id: user.id, username: user.username },
     JWT_SECRET,
@@ -187,13 +198,26 @@ app.get('/api/auth/verify', authMiddleware, (req, res) => {
 });
 
 app.post('/api/auth/setup', async (req, res) => {
+  // One-time bootstrap only: requires explicit env credentials and refuses to
+  // touch an existing admin. Previously any unauthenticated caller could reset
+  // the admin password to the hardcoded defaults 'Sourav'/'Garai'.
   const bcrypt = require('bcryptjs');
-  const username = process.env.ADMIN_USERNAME || 'Sourav';
-  const password = process.env.ADMIN_PASSWORD || 'Garai';
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Set ADMIN_USERNAME and ADMIN_PASSWORD env vars to run setup' });
+  }
+  const { data: existing, error: lookupError } = await supabase
+    .from('admin_users')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+  if (lookupError) return res.status(500).json({ error: lookupError.message });
+  if (existing) return res.status(409).json({ error: 'Admin user already exists' });
   const hash = await bcrypt.hash(password, 10);
   const { error } = await supabase
     .from('admin_users')
-    .upsert({ username, password_hash: hash }, { onConflict: 'username' });
+    .insert({ username, password_hash: hash });
   if (error) return res.status(500).json({ error: error.message });
   res.json({ message: 'Admin user configured' });
 });
@@ -285,7 +309,7 @@ app.post('/api/admin/certificates', authMiddleware, upload.single('image'), asyn
         issuer: issuer || '',
         date_earned: date_earned || '',
         image_url,
-        order_index: parseInt(order_index) || 0
+        order_index: parseInt(order_index, 10) || 0
       })
       .select()
       .single();
@@ -303,7 +327,10 @@ app.put('/api/admin/certificates/:id', authMiddleware, upload.single('image'), a
     if (title !== undefined) payload.title = title;
     if (issuer !== undefined) payload.issuer = issuer;
     if (date_earned !== undefined) payload.date_earned = date_earned;
-    if (order_index !== undefined) payload.order_index = parseInt(order_index);
+    if (order_index !== undefined && order_index !== '') {
+      const parsed = parseInt(order_index, 10);
+      if (!Number.isNaN(parsed)) payload.order_index = parsed;
+    }
     if (req.file) {
       payload.image_url = await uploadToSupabase(req.file, 'certificates');
     }
