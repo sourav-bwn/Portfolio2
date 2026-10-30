@@ -55,7 +55,10 @@ function authMiddleware(req, res, next) {
 
 // ── Upload helper ──
 async function uploadToSupabase(file, folder = '') {
-  const ext = file.originalname.split('.').pop();
+  // Derive the stored extension from the validated mimetype; the user-supplied
+  // filename is untrusted and could otherwise set an arbitrary extension.
+  const EXT_BY_MIME = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+  const ext = EXT_BY_MIME[file.mimetype] || 'bin';
   const filename = `${folder ? folder + '/' : ''}${Date.now()}-${uuidv4()}.${ext}`;
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
