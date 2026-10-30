@@ -11,7 +11,13 @@ const { supabase, BUCKET_NAME } = require('./supabase');
 
 const app = express();
 const PORT = process.env.PORT || 8743;
-const JWT_SECRET = process.env.JWT_SECRET || 'portfolio2-jwt-secret-change-me';
+// Never sign tokens with a publicly known fallback in production: anyone who
+// read this repo could forge an admin token. Fall back only for local dev.
+const IS_PROD = !!(process.env.VERCEL || process.env.NODE_ENV === 'production');
+const JWT_SECRET = process.env.JWT_SECRET || (IS_PROD ? null : 'portfolio2-jwt-secret-change-me');
+if (!JWT_SECRET) {
+  console.error('JWT_SECRET is not set; auth endpoints are disabled in production.');
+}
 
 app.use(cors());
 app.use(express.json());
@@ -38,6 +44,7 @@ function authMiddleware(req, res, next) {
   if (!h || !h.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
   }
+  if (!JWT_SECRET) return res.status(500).json({ error: 'Auth not configured' });
   try {
     req.user = jwt.verify(h.split(' ')[1], JWT_SECRET);
     next();
@@ -174,6 +181,7 @@ app.post('/api/auth/login', async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
+  if (!JWT_SECRET) return res.status(500).json({ error: 'Auth not configured' });
   const token = jwt.sign(
     { id: user.id, username: user.username },
     JWT_SECRET,
