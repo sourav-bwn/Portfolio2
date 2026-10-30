@@ -187,13 +187,26 @@ app.get('/api/auth/verify', authMiddleware, (req, res) => {
 });
 
 app.post('/api/auth/setup', async (req, res) => {
+  // One-time bootstrap only: requires explicit env credentials and refuses to
+  // touch an existing admin. Previously any unauthenticated caller could reset
+  // the admin password to the hardcoded defaults 'Sourav'/'Garai'.
   const bcrypt = require('bcryptjs');
-  const username = process.env.ADMIN_USERNAME || 'Sourav';
-  const password = process.env.ADMIN_PASSWORD || 'Garai';
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Set ADMIN_USERNAME and ADMIN_PASSWORD env vars to run setup' });
+  }
+  const { data: existing, error: lookupError } = await supabase
+    .from('admin_users')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+  if (lookupError) return res.status(500).json({ error: lookupError.message });
+  if (existing) return res.status(409).json({ error: 'Admin user already exists' });
   const hash = await bcrypt.hash(password, 10);
   const { error } = await supabase
     .from('admin_users')
-    .upsert({ username, password_hash: hash }, { onConflict: 'username' });
+    .insert({ username, password_hash: hash });
   if (error) return res.status(500).json({ error: error.message });
   res.json({ message: 'Admin user configured' });
 });
