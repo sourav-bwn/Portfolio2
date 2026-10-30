@@ -306,7 +306,7 @@ app.post('/api/admin/certificates', authMiddleware, upload.single('image'), asyn
         issuer: issuer || '',
         date_earned: date_earned || '',
         image_url,
-        order_index: parseInt(order_index) || 0
+        order_index: parseInt(order_index, 10) || 0
       })
       .select()
       .single();
@@ -324,7 +324,10 @@ app.put('/api/admin/certificates/:id', authMiddleware, upload.single('image'), a
     if (title !== undefined) payload.title = title;
     if (issuer !== undefined) payload.issuer = issuer;
     if (date_earned !== undefined) payload.date_earned = date_earned;
-    if (order_index !== undefined) payload.order_index = parseInt(order_index);
+    if (order_index !== undefined && order_index !== '') {
+      const parsed = parseInt(order_index, 10);
+      if (!Number.isNaN(parsed)) payload.order_index = parsed;
+    }
     if (req.file) {
       payload.image_url = await uploadToSupabase(req.file, 'certificates');
     }
